@@ -3,7 +3,7 @@ mod game;
 use std::sync::Arc;
 
 use eframe::egui;
-use game::{Board, Color, PieceType, Pos};
+use game::{Board, Color, GameState, PieceType, Pos};
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
@@ -65,7 +65,21 @@ impl eframe::App for ChessApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Chinese Chess");
-            ui.label(format!("Turn: {:?}", self.board.turn));
+            match self.board.state {
+                GameState::Playing => {
+                    ui.label(format!("Turn: {:?}", self.board.turn));
+                }
+                GameState::Won(winner) => {
+                    ui.label(
+                        egui::RichText::new(format!("{:?} Wins!", winner))
+                            .color(egui::Color32::GOLD)
+                            .size(20.0),
+                    );
+                    if ui.button("Restart").clicked() {
+                        self.board = Board::new();
+                    }
+                }
+            }
 
             let available_size = ui.available_size();
             let board_width = available_size.x.min(available_size.y * 0.9);

@@ -42,10 +42,17 @@ impl Pos {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum GameState {
+    Playing,
+    Won(Color),
+}
+
 pub struct Board {
     pub grid: [[Option<Piece>; 9]; 10],
     pub turn: Color,
     pub selected: Option<Pos>,
+    pub state: GameState,
 }
 
 impl Board {
@@ -110,6 +117,7 @@ impl Board {
             grid,
             turn: Color::Red,
             selected: None,
+            state: GameState::Playing,
         }
     }
 
@@ -122,14 +130,26 @@ impl Board {
     }
 
     pub fn move_piece(&mut self, from: Pos, to: Pos) -> bool {
+        if self.state != GameState::Playing {
+            return false;
+        }
         if let Some(piece) = self.get_piece(from) {
             if piece.color != self.turn {
                 return false;
             }
             if self.is_valid_move(from, to) {
+                if let Some(target) = self.get_piece(to) {
+                    if target.piece_type == PieceType::General {
+                        self.state = GameState::Won(self.turn);
+                    }
+                }
+
                 self.grid[to.y][to.x] = self.grid[from.y][from.x];
                 self.grid[from.y][from.x] = None;
-                self.turn = self.turn.opposite();
+
+                if self.state == GameState::Playing {
+                    self.turn = self.turn.opposite();
+                }
                 return true;
             }
         }
